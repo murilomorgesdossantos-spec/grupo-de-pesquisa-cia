@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { getProjectBySlug, getCurrentUser, isAdmin, updateProject } from '../firebase';
 import 'react-quill-new/dist/quill.snow.css';
 
-// MÁGICA AQUI: Carrega o React Quill e o Módulo de Imagem juntos e apenas no cliente!
+// Carrega o React Quill e o Módulo de Imagem juntos e apenas no cliente!
 const EditorAvancado = dynamic(
     async () => {
         const RQ = await import('react-quill-new');
@@ -14,17 +14,16 @@ const EditorAvancado = dynamic(
         const Quill = RQ.Quill;
         const BlotFormatter = (await import('quill-blot-formatter')).default;
 
-        // Registra o módulo de redimensionamento no motor do Quill
+        // Regista o módulo de redimensionamento no motor do Quill
         if (Quill && !Quill.imports['modules/blotFormatter']) {
             Quill.register('modules/blotFormatter', BlotFormatter);
         }
 
-        // Retorna o editor pronto para uso
         return function EditorPronto(props) {
             return <ReactQuill {...props} />;
         };
     },
-    { ssr: false, loading: () => <p style={{ color: 'var(--text-muted)' }}>Carregando ferramentas do editor...</p> }
+    { ssr: false, loading: () => <p style={{ color: 'var(--text-muted)' }}>A carregar ferramentas do editor...</p> }
 );
 
 export default function ProjetoDetalhe({ params: paramsPromise }) {
@@ -82,29 +81,47 @@ export default function ProjetoDetalhe({ params: paramsPromise }) {
             setProject({ ...project, title: editTitle, area: editArea, description: editDesc });
             setIsEditing(false);
         } catch (error) {
-            alert("Erro ao salvar: " + error.message);
+            alert("Erro ao guardar: " + error.message);
             console.error(error);
         } finally {
             setIsSaving(false);
         }
     };
 
-    if (loading) return <main style={{ paddingTop: '150px', textAlign: 'center', minHeight: '80vh' }}><p style={{ color: 'var(--text-muted)' }}>Buscando detalhes do projeto...</p></main>;
+    if (loading) return <main style={{ paddingTop: '150px', textAlign: 'center', minHeight: '80vh' }}><p style={{ color: 'var(--text-muted)' }}>A procurar detalhes do projeto...</p></main>;
     if (!project) return <main style={{ paddingTop: '150px', textAlign: 'center', minHeight: '80vh' }}><h1 style={{ color: '#f87171', marginBottom: '1.5rem' }}>Projeto não encontrado</h1><Link href="/projetos" className="btn btn-secondary">Voltar</Link></main>;
 
-    const inputStyle = { width: '100%', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--accent)', color: 'var(--text-primary)', padding: '0.875rem 1rem', borderRadius: '8px', fontSize: '1rem', outline: 'none', marginBottom: '1rem', fontFamily: 'inherit' };
-
-    // Ativa o formatador de imagens no menu de ferramentas
+    // ==========================================
+    // CONFIGURAÇÕES DO EDITOR (ULTRA CLEAN)
+    // ==========================================
     const modules = {
         toolbar: [
-            [{ 'header': [2, 3, false] }],
+            [{ 'size': ['small', false, 'large', 'huge'] }],
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            
             ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-            [{'list': 'ordered'}, {'list': 'bullet'}],
+            
+            [{ 'align': [] }],
+            
+            [{'list': 'ordered'}, {'list': 'bullet'}, { 'indent': '-1'}, { 'indent': '+1' }],
+            
             ['link', 'image', 'video'],
-            ['clean']
+            
+            ['clean'] 
         ],
-        blotFormatter: {} // <-- Isso liga os controles na imagem!
+        clipboard: {
+            matchVisual: false, 
+        },
+        blotFormatter: {} 
     };
+
+    const formats = [
+        'header', 'size', 
+        'bold', 'italic', 'underline', 'strike', 'blockquote',
+        'align', 
+        'list', 'indent',
+        'link', 'image', 'video'
+    ];
 
     return (
         <main style={{ paddingTop: '120px', paddingBottom: '6rem', minHeight: '80vh' }}>
@@ -120,7 +137,7 @@ export default function ProjetoDetalhe({ params: paramsPromise }) {
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                     <button onClick={() => setIsEditing(false)} className="btn btn-secondary btn-sm" disabled={isSaving}>Cancelar</button>
                                     <button onClick={handleSave} className="btn btn-primary btn-sm" style={{ background: '#4ade80', color: '#000' }} disabled={isSaving}>
-                                        {isSaving ? 'Salvando...' : 'Salvar Publicação'}
+                                        {isSaving ? 'A guardar...' : 'Guardar Publicação'}
                                     </button>
                                 </div>
                             )}
@@ -132,18 +149,22 @@ export default function ProjetoDetalhe({ params: paramsPromise }) {
                             <span className="badge" style={{ marginBottom: '1.5rem', display: 'inline-block' }}>{project.area}</span>
                             <h1 className="hero-title" style={{ marginBottom: '2rem', fontSize: 'clamp(2rem, 4vw, 3rem)' }}>{project.title}</h1>
                             
-                            <div 
-                                className="rich-text-content" 
-                                style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8' }}
-                                dangerouslySetInnerHTML={{ __html: project.description?.replace(/&nbsp;/g, ' ') }}
-                            />
+                            {/* A MÁGICA ESTÁ AQUI: Adicionámos ql-snow e ql-editor para a visualização */}
+                            <div className="ql-snow">
+                                <div 
+                                    className="ql-editor rich-text-content" 
+                                    style={{ padding: 0, color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8' }}
+                                    dangerouslySetInnerHTML={{ __html: project.description?.replace(/&nbsp;/g, ' ') }}
+                                />
+                            </div>
                         </>
                     ) : (
                         <div style={{ animation: 'fadeIn 0.3s ease' }}>
                             <select 
                                 value={editArea} 
                                 onChange={(e) => setEditArea(e.target.value)} 
-                                style={{...inputStyle, fontSize: '0.85rem', width: 'auto', display: 'inline-block', marginBottom: '1.5rem', appearance: 'auto', backgroundColor: '#0a0e1c'}}
+                                className="form-input"
+                                style={{ fontSize: '0.85rem', width: 'auto', display: 'inline-block', marginBottom: '1.5rem', appearance: 'auto' }}
                                 required
                             >
                                 <option value="" disabled>Selecione a área...</option>
@@ -152,16 +173,23 @@ export default function ProjetoDetalhe({ params: paramsPromise }) {
                                 <option value="IA">IA</option>
                             </select>
 
-                            <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} style={{...inputStyle, fontSize: '2.5rem', fontWeight: 800, padding: '1rem'}} placeholder="Título do Projeto" />
+                            <input 
+                                type="text" 
+                                value={editTitle} 
+                                onChange={(e) => setEditTitle(e.target.value)} 
+                                className="form-input"
+                                style={{ fontSize: '2.5rem', fontWeight: 800, padding: '1rem', marginBottom: '1.5rem' }} 
+                                placeholder="Título do Projeto" 
+                            />
                             
                             <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Corpo da Página</h3>
                             
-                            {/* O Editor agora suporta redimensionamento de imagens! */}
                             <EditorAvancado 
                                 theme="snow" 
                                 value={editDesc} 
                                 onChange={setEditDesc} 
                                 modules={modules}
+                                formats={formats} 
                                 placeholder="Escreva os detalhes, cole imagens e redimensione-as clicando nelas..."
                             />
                         </div>

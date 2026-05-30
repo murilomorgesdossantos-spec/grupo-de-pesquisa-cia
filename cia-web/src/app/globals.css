@@ -1,9 +1,6 @@
 /* =========================================
    VARIÁVEIS GLOBAIS - TEMA INSTITUCIONAL CLEAN
    ========================================= */
-/* =========================================
-   VARIÁVEIS GLOBAIS - TEMA INSTITUCIONAL CLEAN
-   ========================================= */
 :root {
   --bg-base: #ffffff; 
   --bg-surface: #f8fafc; 
@@ -22,7 +19,7 @@
 }
 
 /* =========================================
-   TEMA ESCURO (DARK MODE) - Já existente
+   TEMA ESCURO (DARK MODE)
    ========================================= */
 [data-theme='dark'] {
   --bg-base: #060913;
@@ -38,22 +35,20 @@
 }
 
 /* =========================================
-   TEMA MAGENTA (NOVO)
+   TEMA MAGENTA 
    ========================================= */
 [data-theme='magenta'] {
-  --bg-base: #1a0b16; /* Fundo principal escuro com toque de vinho */
-  --bg-surface: #2b1224; /* Fundo dos cards um pouco mais claro */
-  --text-primary: #fdf4f9; /* Texto branco rosado */
-  --text-secondary: #e8b4d1; /* Texto secundário rosa suave */
+  --bg-base: #1a0b16; 
+  --bg-surface: #2b1224; 
+  --text-primary: #fdf4f9; 
+  --text-secondary: #e8b4d1; 
   --text-muted: #9e6d8a;
-  --accent: #d946ef; /* Magenta vibrante */
+  --accent: #d946ef; 
   --accent-hover: #c026d3;
   --border: rgba(217, 70, 239, 0.2);
   --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 20px rgba(217, 70, 239, 0.25);
 }
-
-/* O resto do seu CSS continua exatamente igual abaixo... */
 
 /* =========================================
    RESETS E BASE
@@ -86,14 +81,12 @@ img { max-width: 100%; height: auto; display: block; }
    ========================================= */
 h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
 
-/* Gradiente mais sóbrio para o modo claro */
 .text-gradient {
   background: linear-gradient(135deg, #1e3a8a, #2563eb);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Brilho de fundo muito mais sutil, apenas para quebrar o branco total */
 .ambient-glow {
   position: fixed;
   top: -20%; left: -10%; width: 50vw; height: 50vh;
@@ -176,7 +169,6 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
   border-radius: var(--radius-md); border: 1px solid var(--border);
   transition: var(--transition);
 }
-/* Modificado para manter um visual limpo no hover */
 .stat-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-card); border-color: #cbd5e1; }
 .stat-card h3 { color: var(--accent); font-size: 1.25rem; margin-bottom: 0.5rem; }
 .stat-card p { color: var(--text-secondary); font-size: 0.9rem; }
@@ -212,7 +204,7 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
 @media (min-width: 992px) { .forum-layout { grid-template-columns: 1fr 2fr; } }
 
 .post-creator {
-  background: var(--bg-surface); /* Modificado para variável */
+  background: var(--bg-surface); 
   border: 1px solid var(--border);
   padding: 2rem; border-radius: var(--radius-lg);
   position: sticky; top: 100px; box-shadow: var(--shadow-card);
@@ -222,7 +214,7 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
 .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; }
 
 .form-input {
-  width: 100%; background: var(--bg-base); /* Modificado para variável */
+  width: 100%; background: var(--bg-base); 
   border: 1px solid var(--border);
   color: var(--text-primary); padding: 0.875rem 1rem; border-radius: var(--radius-sm);
   font-family: inherit; font-size: 0.95rem; transition: var(--transition); outline: none;
@@ -231,7 +223,7 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
 textarea.form-input { resize: vertical; min-height: 120px; }
 
 .post-card {
-  background: var(--bg-surface); /* Modificado para variável */
+  background: var(--bg-surface); 
   border: 1px solid var(--border);
   padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; transition: all 0.2s ease;
   box-shadow: var(--shadow-card);
@@ -258,24 +250,108 @@ textarea.form-input { resize: vertical; min-height: 120px; }
   font-family: inherit !important;
   font-size: 1rem !important;
   min-height: 300px;
-  background: var(--bg-base); /* Modificado para variável */
+  background: var(--bg-base); 
 }
 .ql-stroke { stroke: var(--text-secondary) !important; }
 .ql-fill { fill: var(--text-secondary) !important; }
 .ql-picker { color: var(--text-secondary) !important; }
 .ql-editor { color: var(--text-primary); }
 
-.ql-snow .ql-picker-options { background-color: var(--bg-surface) !important; border: 1px solid var(--border) !important; box-shadow: var(--shadow-card) !important; }
-.ql-snow .ql-picker-item { color: var(--text-secondary) !important; padding: 5px 10px !important; }
-.ql-snow .ql-picker-item:hover, .ql-snow .ql-picker-item.ql-selected { color: var(--accent) !important; background-color: var(--bg-base) !important; }
-.ql-snow .ql-picker.ql-expanded .ql-picker-label, .ql-snow .ql-picker.ql-expanded .ql-picker-label .ql-stroke, .ql-snow .ql-active .ql-stroke { color: var(--accent) !important; stroke: var(--accent) !important; }
+/* -----------------------------------------
+   CAIXINHAS SUSPENSAS (Gerais - Tamanho/Títulos) 
+   ----------------------------------------- */
+.ql-snow .ql-picker-options { 
+  background-color: var(--bg-surface) !important; 
+  border: 1px solid var(--border) !important; 
+  box-shadow: var(--shadow-card) !important; 
+  padding: 6px 0 !important;
+  border-radius: 8px !important;
+}
+.ql-snow .ql-picker-item { 
+  color: var(--text-secondary) !important; 
+  padding: 8px 16px !important; 
+  display: block !important;
+}
 
-.ql-editor img, .rich-text-content img { display: block !important; float: none !important; margin: 2rem auto !important; max-width: 100% !important; height: auto !important; border-radius: 8px; }
+/* -----------------------------------------
+   CONFIGURAÇÃO EXCLUSIVA: MENU DE ALINHAMENTO
+   Resolve a falta de nitidez e o "esmagamento" dos SVGs
+   ----------------------------------------- */
+.ql-snow .ql-picker.ql-align .ql-picker-options {
+  min-width: 60px !important; 
+}
+.ql-snow .ql-picker.ql-align .ql-picker-item {
+  padding: 10px 0 !important; /* Mais espaço vertical para clique */
+}
+.ql-snow .ql-picker.ql-align .ql-picker-item svg {
+  width: 22px !important;
+  height: 22px !important;
+  display: block !important;
+  margin: 0 auto !important; /* Centraliza o ícone perfeitamente como um bloco */
+  transform: none !important; /* Remove qualquer efeito de lupa/esmagamento */
+}
+.ql-snow .ql-picker.ql-align .ql-picker-label svg {
+  width: 20px !important;
+  height: 20px !important;
+  transform: none !important;
+}
+
+/* -----------------------------------------
+   CORES E EFEITOS (HOVER) DOS MENUS
+   ----------------------------------------- */
+.ql-snow .ql-picker-item .ql-stroke { 
+  stroke: var(--text-secondary) !important; 
+  stroke-width: 1.5 !important; 
+}
+.ql-snow .ql-picker-item .ql-fill { fill: var(--text-secondary) !important; }
+
+.ql-snow .ql-picker-item:hover, 
+.ql-snow .ql-picker-item.ql-selected { 
+  color: var(--accent) !important; 
+  background-color: var(--bg-base) !important; 
+}
+.ql-snow .ql-picker-item:hover .ql-stroke, 
+.ql-snow .ql-picker-item.ql-selected .ql-stroke { stroke: var(--accent) !important; }
+.ql-snow .ql-picker-item:hover .ql-fill, 
+.ql-snow .ql-picker-item.ql-selected .ql-fill { fill: var(--accent) !important; }
+
+.ql-snow .ql-picker.ql-expanded .ql-picker-label, 
+.ql-snow .ql-picker.ql-expanded .ql-picker-label .ql-stroke, 
+.ql-snow .ql-active .ql-stroke { 
+  color: var(--accent) !important; 
+  stroke: var(--accent) !important; 
+}
+
+/* =========================================
+   IMAGENS E TEXTO RICO
+   ========================================= */
+.ql-editor img, .rich-text-content img { 
+  display: block !important; float: none !important; margin: 2rem auto !important; 
+  max-width: 100% !important; height: auto !important; border-radius: 8px; 
+}
 .blot-formatter__toolbar { display: none !important; }
 .hero-title { text-align: center !important; }
-.rich-text-content h1, .rich-text-content h2, .rich-text-content h3 { text-align: left !important; word-wrap: normal !important; word-break: normal !important; overflow-wrap: break-word !important; margin-bottom: 1rem; }
-.rich-text-content p { text-align: justify !important; word-wrap: normal !important; word-break: normal !important; overflow-wrap: break-word !important; }
+
+.rich-text-content h1, .rich-text-content h2, .rich-text-content h3 { 
+  word-wrap: normal !important; word-break: normal !important; overflow-wrap: break-word !important; margin-bottom: 1rem; 
+}
+.rich-text-content p { 
+  word-wrap: normal !important; word-break: normal !important; overflow-wrap: break-word !important; 
+}
 .rich-text-content a { word-break: break-all !important; color: var(--accent); }
+
+/* =========================================
+   CLASSES NATIVAS DO QUILL (ALINHAMENTO E RECUO)
+   ========================================= */
+.ql-align-center { text-align: center !important; }
+.ql-align-right { text-align: right !important; }
+.ql-align-justify { text-align: justify !important; }
+
+.ql-indent-1 { padding-left: 3rem !important; }
+.ql-indent-2 { padding-left: 6rem !important; }
+.ql-indent-3 { padding-left: 9rem !important; }
+.ql-indent-4 { padding-left: 12rem !important; }
+.ql-indent-5 { padding-left: 15rem !important; }
 
 /* =========================================
    RESPONSIVIDADE (MOBILE E CORREÇÕES)
@@ -302,27 +378,14 @@ textarea.form-input { resize: vertical; min-height: 120px; }
   .hero-actions { flex-direction: column; width: 100%; }
   .hero-actions .btn { width: 100%; }
   
+  /* Ajuste e compensação da Navbar */
   main { padding-top: 70px !important; }
   main > section:first-child { padding-top: 1.5rem !important; }
 
-  /* ADICIONE ISTO AQUI! Remove o sticky do Admin e Fórum no celular */
+  /* Remove o sticky do Admin e Fórum no celular */
   .post-creator {
     position: relative !important;
     top: 0 !important;
     margin-bottom: 2rem;
-  }
-}
-/* =========================================
-   CORREÇÃO DO ESPAÇAMENTO NO TOPO (MOBILE E TABLET)
-   ========================================= */
-@media (max-width: 768px) {
-  /* Diminui o espaço principal que compensa a Navbar */
-  main {
-    padding-top: 70px !important; 
-  }
-  
-  /* Encontra a primeira seção de todas as páginas e corta o excesso de espaço */
-  main > section:first-child {
-    padding-top: 1.5rem !important; 
   }
 }
