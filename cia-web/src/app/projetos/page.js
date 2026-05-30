@@ -23,12 +23,16 @@ export default function ProjetosPage() {
     }, []);
 
     return (
-        <main style={{ paddingTop: '100px', minHeight: '80vh' }}>
-            <section className="hero section" style={{ paddingBottom: '2rem' }}>
+        /* Reduzimos o padding-top do main para compensar apenas a Navbar fixa */
+        <main style={{ paddingTop: '80px', minHeight: 'calc(100vh - 200px)' }}>
+            <section className="section" style={{ paddingTop: '3rem', paddingBottom: '2rem' }}>
                 <div className="container">
-                    <div className="hero-content text-center">
+                    <div className="text-center">
                         <div className="badge">Portfólio Científico</div>
-                        <h1 className="hero-title">Nossos <span className="text-gradient">Projetos.</span></h1>
+                        {/* Como tiramos o hero, ajustamos o tamanho da fonte direto na tag h1 para manter o padrão */}
+                        <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginBottom: '1rem', color: 'var(--text-primary)' }}>
+                            Nossos <span className="text-gradient">Projetos.</span>
+                        </h1>
                         <p className="hero-subtitle">Conheça as iniciativas e pesquisas desenvolvidas pelo grupo CIA.</p>
                     </div>
                 </div>
