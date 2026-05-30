@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, loginUser, registerUser, loginWithGoogle, updateUserProfile, completeGoogleRegistration } from '../firebase';
 
+// 1. IMPORTAÇÃO DO NOSSO SISTEMA DE MODAL
+import { useModal } from '../components/ModalProvider';
+
 export default function LoginPage() {
     const router = useRouter();
     const [isRegistering, setIsRegistering] = useState(false);
@@ -19,6 +22,9 @@ export default function LoginPage() {
     
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // 2. INICIA A FUNÇÃO DE ALERTA
+    const { showAlert } = useModal();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -41,7 +47,9 @@ export default function LoginPage() {
             router.push('/');
             router.refresh(); 
         } catch (err) {
-            setError(isRegistering ? "Erro ao criar conta." : "Credenciais inválidas.");
+            // Mantém o erro visual na tela para digitação de senha, 
+            // mas poderia usar showAlert("Acesso Negado", "Credenciais inválidas.") se preferir!
+            setError(isRegistering ? "Erro ao criar conta." : "Credenciais inválidas. Verifique seu e-mail e senha.");
         } finally {
             setLoading(false);
         }
@@ -54,7 +62,6 @@ export default function LoginPage() {
             const { userCredential, isNewUser, suggestedFirstName, suggestedLastName } = await loginWithGoogle();
 
             if (isNewUser) {
-                // Se é conta nova, preenche os nomes, salva os dados auth e muda a tela
                 setFirstName(suggestedFirstName);
                 setLastName(suggestedLastName);
                 setGoogleAuthData({
@@ -64,7 +71,6 @@ export default function LoginPage() {
                 setIsGoogleConfirming(true);
                 setLoading(false);
             } else {
-                // Se já tinha conta, entra direto
                 router.push('/');
                 router.refresh();
             }
@@ -72,13 +78,13 @@ export default function LoginPage() {
             if (err.code === 'auth/popup-closed-by-user') {
                 setLoading(false);
             } else {
-                setError("Erro ao comunicar com o Google.");
+                // Alerta elegante caso a comunicação com o Google falhe
+                showAlert("Erro de Autenticação", "Não foi possível conectar com o Google no momento.");
                 setLoading(false);
             }
         }
     };
 
-    // Função que finaliza a conta do Google APÓS a confirmação dos nomes
     const handleConfirmGoogle = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -92,16 +98,18 @@ export default function LoginPage() {
             router.push('/');
             router.refresh();
         } catch (err) {
-            setError("Erro ao finalizar o cadastro.");
+            showAlert("Erro", "Erro ao finalizar o cadastro.");
             setLoading(false);
         }
     };
 
     return (
-        /* Fundo da tela ligeiramente cinza para destacar o card branco */
-        <main style={{ paddingTop: '80px', minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface)' }}>
+        /* CORREÇÃO: Fundo da página agora usa var(--bg-base) para contrastar com o cartão */
+        <main style={{ paddingTop: '80px', minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)' }}>
             <div className="container" style={{ padding: '2rem 1.5rem' }}>
-                <div className="cta-box" style={{ maxWidth: '450px', margin: '0 auto', padding: '3rem 2rem', textAlign: 'center', background: '#ffffff' }}>
+                
+                {/* CORREÇÃO: Cartão de login agora usa var(--bg-surface) e tem borda suave */}
+                <div className="cta-box" style={{ maxWidth: '450px', margin: '0 auto', padding: '3rem 2rem', textAlign: 'center', background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', borderRadius: '16px' }}>
                     
                     {/* TELA 2: CONFIRMAÇÃO DO GOOGLE */}
                     {isGoogleConfirming ? (
@@ -111,12 +119,12 @@ export default function LoginPage() {
                                 Quase lá! Revise como seu nome aparecerá para os outros pesquisadores.
                             </p>
 
-                            {error && <div style={{ background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', fontWeight: '500' }}>{error}</div>}
+                            {error && <div style={{ background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', fontWeight: '500', border: '1px solid rgba(220, 38, 38, 0.2)' }}>{error}</div>}
 
                             <form onSubmit={handleConfirmGoogle} style={{ textAlign: 'left' }}>
                                 <div className="form-group" style={{ marginBottom: '1.25rem' }}>
                                     <label className="form-label">E-mail (Fornecido pelo Google)</label>
-                                    <input type="email" className="form-input" value={googleAuthData?.email} disabled style={{ opacity: 0.7, cursor: 'not-allowed', background: 'var(--bg-surface)' }} />
+                                    <input type="email" className="form-input" value={googleAuthData?.email} disabled style={{ opacity: 0.7, cursor: 'not-allowed', background: 'var(--bg-base)' }} />
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
@@ -145,7 +153,7 @@ export default function LoginPage() {
                                 {isRegistering ? 'Junte-se à nossa comunidade de pesquisa.' : 'Entre com suas credenciais de pesquisador.'}
                             </p>
 
-                            {error && <div style={{ background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', fontWeight: '500' }}>{error}</div>}
+                            {error && <div style={{ background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', fontWeight: '500', border: '1px solid rgba(220, 38, 38, 0.2)' }}>{error}</div>}
 
                             <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
                                 {isRegistering && (
