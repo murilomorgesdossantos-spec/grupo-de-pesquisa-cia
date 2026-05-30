@@ -112,7 +112,6 @@ export default function ForumPage() {
     };
 
     const handleDeletePost = (post) => {
-        // Substituído o window.confirm pelo nosso Modal Personalizado
         showConfirm(
             "Excluir Tópico", 
             "Deseja realmente apagar esta postagem?", 
@@ -129,7 +128,6 @@ export default function ForumPage() {
     };
 
     const handleDeleteComment = (postId, comment) => {
-        // Substituído o window.confirm pelo nosso Modal Personalizado
         showConfirm(
             "Excluir Comentário", 
             "Deseja realmente apagar este comentário?", 
@@ -222,13 +220,8 @@ export default function ForumPage() {
                             <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>Nenhuma discussão iniciada ainda. Seja o primeiro!</div>
                         ) : (
                             posts.map((post) => (
-                                post.deleted ? (
-                                    <div key={post.id} className="post-card" style={{ opacity: 0.5, padding: '1rem 1.5rem', background: 'var(--bg-surface)' }}>
-                                        <p style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
-                                            🚫 Esta postagem foi apagada {post.deletedBy === 'admin' ? 'por um administrador' : 'pelo autor'}.
-                                        </p>
-                                    </div>
-                                ) : (
+                                /* A MÁGICA ESTÁ AQUI: Se estiver deletado, retorna null e não desenha nada! */
+                                post.deleted ? null : (
                                     <div key={post.id} className="post-card">
                                         <div className="post-header-info">
                                             <div className="post-author-badge">
@@ -275,13 +268,8 @@ export default function ForumPage() {
                                                 {comments[post.id]?.length > 0 ? (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
                                                         {comments[post.id].map(comment => (
-                                                            comment.deleted ? (
-                                                                <div key={comment.id} className="comment-bubble" style={{ opacity: 0.5, padding: '0.75rem 1rem' }}>
-                                                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, fontStyle: 'italic' }}>
-                                                                        🚫 Comentário apagado {comment.deletedBy === 'admin' ? 'por um administrador' : 'pelo autor'}.
-                                                                    </p>
-                                                                </div>
-                                                            ) : (
+                                                            /* MÁGICA DOS COMENTÁRIOS: Se estiver deletado, também retorna null! */
+                                                            comment.deleted ? null : (
                                                                 <div key={comment.id} className="comment-bubble">
                                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem' }}>
                                                                         <div>
