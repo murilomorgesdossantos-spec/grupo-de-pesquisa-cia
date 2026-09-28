@@ -105,16 +105,17 @@ export default function LoginPage() {
 
     return (
         /* CORREÇÃO: Fundo da página agora usa var(--bg-base) para contrastar com o cartão */
-        <main style={{ paddingTop: '80px', minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)' }}>
-            <div className="container" style={{ padding: '2rem 1.5rem' }}>
+        <main className="auth-page" style={{ paddingTop: '80px', minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)' }}>
+            <div className="container auth-shell">
+                <aside className="auth-intro"><p className="auth-eyebrow">CIA / COMUNIDADE CIENTÍFICA</p><h2>Boas ideias<br />{' '}ganham força<br />{' '}<span>em grupo.</span></h2><p>Conecte-se à pesquisa. Compartilhe conhecimento, participe das discussões e acompanhe novas possibilidades.</p><div className="auth-graphic" aria-hidden="true"><span /><span /><span /><b>+</b></div><small>IFPR · CAMPUS CAMPO LARGO</small></aside>
                 
                 {/* CORREÇÃO: Cartão de login agora usa var(--bg-surface) e tem borda suave */}
-                <div className="cta-box" style={{ maxWidth: '450px', margin: '0 auto', padding: '3rem 2rem', textAlign: 'center', background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', borderRadius: '16px' }}>
+                <div className="cta-box auth-card" style={{ maxWidth: '450px', margin: '0 auto', padding: '3rem 2rem', textAlign: 'center', background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', borderRadius: '16px' }}>
                     
                     {/* TELA 2: CONFIRMAÇÃO DO GOOGLE */}
                     {isGoogleConfirming ? (
                         <>
-                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Confirme seus Dados</h2>
+                            <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Confirme seus Dados</h1>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '2rem' }}>
                                 Quase lá! Revise como seu nome aparecerá para os outros pesquisadores.
                             </p>
@@ -123,18 +124,18 @@ export default function LoginPage() {
 
                             <form onSubmit={handleConfirmGoogle} style={{ textAlign: 'left' }}>
                                 <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                                    <label className="form-label">E-mail (Fornecido pelo Google)</label>
-                                    <input type="email" className="form-input" value={googleAuthData?.email} disabled style={{ opacity: 0.7, cursor: 'not-allowed', background: 'var(--bg-base)' }} />
+                                    <label className="form-label" htmlFor="google-email">E-mail (Fornecido pelo Google)</label>
+                                    <input id="google-email" type="email" className="form-input" value={googleAuthData?.email} disabled style={{ opacity: 0.7, cursor: 'not-allowed', background: 'var(--bg-base)' }} />
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
                                     <div className="form-group" style={{ flex: 1, margin: 0 }}>
-                                        <label className="form-label">Primeiro Nome</label>
-                                        <input type="text" className="form-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                                        <label className="form-label" htmlFor="google-first-name">Primeiro Nome</label>
+                                        <input id="google-first-name" autoComplete="given-name" type="text" className="form-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
                                     </div>
                                     <div className="form-group" style={{ flex: 1, margin: 0 }}>
-                                        <label className="form-label">Último Nome</label>
-                                        <input type="text" className="form-input" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                                        <label className="form-label" htmlFor="google-last-name">Último Nome</label>
+                                        <input id="google-last-name" autoComplete="family-name" type="text" className="form-input" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
                                     </div>
                                 </div>
 
@@ -146,9 +147,9 @@ export default function LoginPage() {
                     ) : (
                         /* TELA 1: LOGIN / REGISTRO NORMAL */
                         <>
-                            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                            <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                                 {isRegistering ? 'Criar uma Conta' : 'Acesso ao Portal'}
-                            </h2>
+                            </h1>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '2rem' }}>
                                 {isRegistering ? 'Junte-se à nossa comunidade de pesquisa.' : 'Entre com suas credenciais de pesquisador.'}
                             </p>
@@ -159,23 +160,23 @@ export default function LoginPage() {
                                 {isRegistering && (
                                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
                                         <div className="form-group" style={{ flex: 1, margin: 0 }}>
-                                            <label className="form-label">Nome</label>
-                                            <input type="text" className="form-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                                            <label className="form-label" htmlFor="register-first-name">Nome</label>
+                                            <input id="register-first-name" autoComplete="given-name" type="text" className="form-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
                                         </div>
                                         <div className="form-group" style={{ flex: 1, margin: 0 }}>
-                                            <label className="form-label">Sobrenome</label>
-                                            <input type="text" className="form-input" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                                            <label className="form-label" htmlFor="register-last-name">Sobrenome</label>
+                                            <input id="register-last-name" autoComplete="family-name" type="text" className="form-input" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="form-group">
-                                    <label className="form-label">E-mail</label>
-                                    <input type="email" className="form-input" placeholder="nome@exemplo.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                                    <label className="form-label" htmlFor="login-email">E-mail</label>
+                                    <input id="login-email" autoComplete="email" type="email" className="form-input" placeholder="nome@exemplo.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                                 </div>
                                 <div className="form-group" style={{ marginBottom: '2rem' }}>
-                                    <label className="form-label">Senha</label>
-                                    <input type="password" className="form-input" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                                    <label className="form-label" htmlFor="login-password">Senha</label>
+                                    <input id="login-password" autoComplete={isRegistering ? 'new-password' : 'current-password'} type="password" className="form-input" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
                                 </div>
                                 <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
                                     {loading ? 'Autenticando...' : (isRegistering ? 'Registrar' : 'Entrar')}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
     getCurrentUser, isAdmin, createPost, getPosts, getUserProfile, 
@@ -38,6 +38,17 @@ export default function ForumPage() {
     const [selectedUserProfile, setSelectedUserProfile] = useState(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
+    const fetchPosts = useCallback(async () => {
+        try {
+            const data = await getPosts();
+            setPosts(data);
+        } catch (error) {
+            console.error("Erro ao carregar posts", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         const initForum = async () => {
             const currentUser = await getCurrentUser();
@@ -51,18 +62,7 @@ export default function ForumPage() {
             await fetchPosts();
         };
         initForum();
-    }, [router]);
-
-    const fetchPosts = async () => {
-        try {
-            const data = await getPosts();
-            setPosts(data);
-        } catch (error) {
-            console.error("Erro ao carregar posts", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [router, fetchPosts]);
 
     const handleCreatePost = async (e) => {
         e.preventDefault();
@@ -177,11 +177,11 @@ export default function ForumPage() {
     }
 
     return (
-        <main style={{ paddingTop: '80px', paddingBottom: '6rem', minHeight: 'calc(100vh - 200px)' }}>
+        <main className="forum-page" style={{ paddingTop: '80px', paddingBottom: '6rem', minHeight: 'calc(100vh - 200px)' }}>
             
             <section className="section" style={{ paddingTop: '3rem', paddingBottom: '2rem' }}>
                 <div className="container hero-container">
-                    <div className="hero-content text-center">
+                    <div className="hero-content text-center forum-heading">
                         <div className="badge">Comunidade Científica</div>
                         <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginBottom: '1rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>
                             Fórum de <span className="text-gradient">Discussões.</span>
@@ -201,12 +201,12 @@ export default function ForumPage() {
                             <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Iniciar Discussão</h2>
                             <form onSubmit={handleCreatePost}>
                                 <div className="form-group">
-                                    <label className="form-label">Título do Tópico</label>
-                                    <input type="text" className="form-input" placeholder="Inserir texto" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                                    <label className="form-label" htmlFor="topic-title">Título do Tópico</label>
+                                    <input id="topic-title" type="text" className="form-input" placeholder="Inserir texto" value={title} onChange={(e) => setTitle(e.target.value)} required />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Conteúdo</label>
-                                    <textarea className="form-input" placeholder="Escreva os detalhes da sua dúvida ou ideia aqui..." value={content} onChange={(e) => setContent(e.target.value)} required></textarea>
+                                    <label className="form-label" htmlFor="topic-content">Conteúdo</label>
+                                    <textarea id="topic-content" className="form-input" placeholder="Escreva os detalhes da sua dúvida ou ideia aqui..." value={content} onChange={(e) => setContent(e.target.value)} required></textarea>
                                 </div>
                                 <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} disabled={isSubmitting}>
                                     {isSubmitting ? 'Publicando...' : 'Publicar Tópico'}

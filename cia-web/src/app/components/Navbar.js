@@ -1,105 +1,127 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { auth, isAdmin, logoutUser, getUserProfile, updateUserProfile } from '../firebase';
+import { usePathname } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { useTheme } from 'next-themes'; 
+import { useTheme } from 'next-themes';
+import { auth, isAdmin, logoutUser, getUserProfile, updateUserProfile } from '../firebase';
+import { useModal } from './ModalProvider';
+import './navigation.css';
 
-// IMPORTA O NOSSO NOVO SISTEMA DE MODAIS (Na mesma pasta)
-import { useModal } from './ModalProvider'; 
+const links = [{ href: '/', label: 'Home' }, { href: '/sobre', label: 'Sobre' }, { href: '/projetos', label: 'Projetos' }, { href: '/forum', label: 'Fórum' }];
+const themes = [{ value: 'light', label: 'Claro' }, { value: 'dark', label: 'Dark' }, { value: 'magenta', label: 'Magenta' }];
+const subscribeMounted = () => () => {};
+
+function ArrowIcon() {
+    return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
 
 export default function Navbar() {
+    const pathname = usePathname();
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
     const [userIsAdmin, setUserIsAdmin] = useState(false);
     const [isChecking, setIsChecking] = useState(true);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
-    
-    // Temas
-    const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
-    const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false); 
-
-    // Estados do Menu Flutuante do Perfil
+    const { resolvedTheme, setTheme } = useTheme();
+    const theme = resolvedTheme;
+    const mounted = useSyncExternalStore(subscribeMounted, () => true, () => false);
+    const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const [editFirstName, setEditFirstName] = useState('');
     const [editLastName, setEditLastName] = useState('');
     const [editLattes, setEditLattes] = useState('');
     const [isSavingProfile, setIsSavingProfile] = useState(false);
-
-    // INICIA AS FUNÇÕES DO MODAL
-    const { showAlert, showConfirm } = useModal();
+    const [profileError, setProfileError] = useState('');
+    const themeMenuRef = useRef(null);
+    const themeButtonRef = useRef(null);
+    const mobileButtonRef = useRef(null);
+    const profileButtonRef = useRef(null);
+    const profileDialogRef = useRef(null);
+    const { showConfirm } = useModal();
 
     useEffect(() => {
-        setMounted(true);
+        let active = true;
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
-                const adminStatus = await isAdmin(currentUser.uid);
+            setUser(currentUser);
+            setUserIsAdmin(false);
+            if (!currentUser) { setProfile(null); setIsChecking(false); return; }
+            try {
+                const [adminStatus, userProf] = await Promise.all([isAdmin(currentUser.uid), getUserProfile(currentUser.uid)]);
+                if (!active || auth.currentUser?.uid !== currentUser.uid) return;
                 setUserIsAdmin(adminStatus);
-                
-                const userProf = await getUserProfile(currentUser.uid);
-                if (userProf) {
-                    setProfile(userProf);
-                    setEditFirstName(userProf.firstName || '');
-                    setEditLastName(userProf.lastName || '');
-                    setEditLattes(userProf.lattesLink || '');
-                }
-            } else {
-                setUser(null);
-                setProfile(null);
-                setUserIsAdmin(false);
-            }
-            setIsChecking(false);
+                setProfile(userProf);
+                setEditFirstName(userProf?.firstName || '');
+                setEditLastName(userProf?.lastName || '');
+                setEditLattes(userProf?.lattesLink || '');
+            } catch {
+                // Authentication remains usable if extra profile data is temporarily unavailable.
+            } finally { if (active) setIsChecking(false); }
         });
-        return () => unsubscribe();
+        return () => { active = false; unsubscribe(); };
     }, []);
 
-    // LOGOUT COM CONFIRMAÇÃO ELEGANTE
-    const handleLogout = (e) => {
-        e.preventDefault();
-        showConfirm(
-            "Sair da Conta", 
-            "Tem certeza que deseja sair do sistema?", 
-            async () => {
-                await logoutUser();
-                window.location.href = '/login';
-            }
-        );
-    };
+    useEffect(() => {
+        if (!isThemeMenuOpen) return;
+        (themeMenuRef.current?.querySelector('[aria-checked="true"]') || themeMenuRef.current?.querySelector('[role="menuitemradio"]'))?.focus();
+        const closeOutside = (event) => { if (!themeMenuRef.current?.contains(event.target)) setIsThemeMenuOpen(false); };
+        document.addEventListener('pointerdown', closeOutside);
+        return () => document.removeEventListener('pointerdown', closeOutside);
+    }, [isThemeMenuOpen]);
 
-    const handleSaveProfile = async (e) => {
-        e.preventDefault();
+    useEffect(() => {
+        if (!isProfileMenuOpen) return;
+        const previouslyFocused = document.activeElement;
+        const previousOverflow = document.body.style.overflow;
+        const profileTrigger = profileButtonRef.current;
+        document.body.style.overflow = 'hidden';
+        profileDialogRef.current?.querySelector('input')?.focus();
+        const handleKey = (event) => {
+            if (event.key === 'Escape') { setIsProfileMenuOpen(false); return; }
+            if (event.key !== 'Tab') return;
+            const focusable = profileDialogRef.current?.querySelectorAll('button:not(:disabled), input:not(:disabled), a[href]');
+            if (!focusable?.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        };
+        document.addEventListener('keydown', handleKey);
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener('keydown', handleKey);
+            (profileTrigger || previouslyFocused)?.focus();
+        };
+    }, [isProfileMenuOpen]);
+
+    const closeMenu = () => { setIsMobileOpen(false); setIsThemeMenuOpen(false); };
+    const handleLogout = () => {
+        setIsProfileMenuOpen(false);
+        closeMenu();
+        showConfirm('Sair da Conta', 'Tem certeza que deseja sair do sistema?', async () => {
+            await logoutUser();
+            window.location.href = '/login';
+        });
+    };
+    const handleSaveProfile = async (event) => {
+        event.preventDefault();
+        if (!user || isSavingProfile) return;
         setIsSavingProfile(true);
+        setProfileError('');
         try {
-            await updateUserProfile(user.uid, {
-                firstName: editFirstName,
-                lastName: editLastName,
-                lattesLink: editLattes
-            });
-            setProfile({ ...profile, firstName: editFirstName, lastName: editLastName, lattesLink: editLattes });
+            const changes = { firstName: editFirstName, lastName: editLastName, lattesLink: editLattes };
+            await updateUserProfile(user.uid, changes);
+            setProfile({ ...profile, ...changes });
             setIsProfileMenuOpen(false);
-            // Opcional: Pode até colocar um showAlert de sucesso aqui se quiser!
-            // showAlert("Sucesso", "Perfil atualizado com sucesso!");
-        } catch (error) {
-            // ALERTA DE ERRO USANDO O MODAL GLOBAL
-            showAlert("Erro", "Não foi possível salvar as alterações do perfil. Tente novamente.");
-        } finally {
-            setIsSavingProfile(false);
-        }
+        } catch { setProfileError('Não foi possível salvar as alterações do perfil. Tente novamente.'); }
+        finally { setIsSavingProfile(false); }
     };
-
-    const closeMenu = () => {
-        setIsMobileOpen(false);
-        setIsThemeMenuOpen(false); 
-    };
-
-    const toggleProfileMenu = async () => {
-        const willOpen = !isProfileMenuOpen;
-        setIsProfileMenuOpen(willOpen);
-
-        if (willOpen && user) {
+    const openProfile = async () => {
+        setProfileError('');
+        setIsThemeMenuOpen(false);
+        setIsProfileMenuOpen(true);
+        try {
             const userProf = await getUserProfile(user.uid);
             if (userProf) {
                 setProfile(userProf);
@@ -107,150 +129,64 @@ export default function Navbar() {
                 setEditLastName(userProf.lastName || '');
                 setEditLattes(userProf.lattesLink || '');
             }
-        }
+        } catch { setProfileError('Não foi possível atualizar os dados do perfil. Tente novamente.'); }
     };
-
-    const getInitial = () => {
-        if (profile?.firstName) return profile.firstName.charAt(0).toUpperCase();
-        return user?.email?.charAt(0).toUpperCase() || 'U';
+    const handleThemeChange = (newTheme) => { setTheme(newTheme); setIsThemeMenuOpen(false); themeButtonRef.current?.focus(); };
+    const handleThemeKeys = (event) => {
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const options = Array.from(themeMenuRef.current.querySelectorAll('[role="menuitemradio"]'));
+        const index = options.indexOf(document.activeElement);
+        const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+        options[nextIndex]?.focus();
     };
-
-    const handleThemeChange = (newTheme) => {
-        setTheme(newTheme);
-        setIsThemeMenuOpen(false);
+    const handleHeaderKeys = (event) => {
+        if (event.key !== 'Escape') return;
+        if (isThemeMenuOpen) { setIsThemeMenuOpen(false); themeButtonRef.current?.focus(); }
+        else if (isMobileOpen) { setIsMobileOpen(false); mobileButtonRef.current?.focus(); }
     };
+    const initial = profile?.firstName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
+    const isActive = (href) => href === '/' ? pathname === '/' : pathname === href || pathname?.startsWith(`${href}/`);
 
     return (
         <>
-            <header className="header" id="header" style={{ borderBottom: '1px solid var(--border)', position: 'relative', zIndex: 100, background: 'var(--bg-surface)' }}>
-                <div className="container nav-container">
-                    <Link href="/" className="logo" onClick={closeMenu}>CIA<span className="logo-dot">.</span></Link>
-                    
-                    <button className={`mobile-menu ${isMobileOpen ? 'active' : ''}`} onClick={() => setIsMobileOpen(!isMobileOpen)}>
-                        <span className="line"></span><span className="line"></span><span className="line"></span>
-                    </button>
-                    
-                    <nav className={`nav-menu ${isMobileOpen ? 'active' : ''}`}>
-                        <ul className="nav-list">
-                            <li><Link href="/" className="nav-link" onClick={closeMenu}>Home</Link></li>
-                            <li><Link href="/sobre" className="nav-link" onClick={closeMenu}>Sobre</Link></li>
-                            <li><Link href="/projetos" className="nav-link" onClick={closeMenu}>Projetos</Link></li>
-                            <li><Link href="/forum" className="nav-link" onClick={closeMenu}>Fórum</Link></li>
-                            
-                            {/* MENU DE TEMAS (DROPDOWN) */}
-                            {mounted && (
-                                <li style={{ position: 'relative' }}>
-                                    <button 
-                                        onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem', transition: '0.2s' }}
-                                        title="Escolher Tema"
-                                    >
-                                        🎨 Tema
-                                    </button>
-                                    
-                                    {isThemeMenuOpen && (
-                                        <div style={{
-                                            position: 'absolute', top: '100%', right: '50%', transform: 'translateX(50%)', marginTop: '15px',
-                                            background: 'var(--bg-surface)', border: '1px solid var(--border)',
-                                            borderRadius: '12px', padding: '0.5rem', width: '130px',
-                                            boxShadow: 'var(--shadow-card)', zIndex: 1000,
-                                            display: 'flex', flexDirection: 'column', gap: '0.2rem'
-                                        }}>
-                                            <button 
-                                                onClick={() => handleThemeChange('light')}
-                                                style={{ width: '100%', padding: '0.5rem 0.75rem', textAlign: 'left', background: theme === 'light' ? 'var(--bg-base)' : 'transparent', border: 'none', borderRadius: '8px', color: theme === 'light' ? 'var(--accent)' : 'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: '0.2s' }}
-                                            >☀️ Claro</button>
-                                            
-                                            <button 
-                                                onClick={() => handleThemeChange('dark')}
-                                                style={{ width: '100%', padding: '0.5rem 0.75rem', textAlign: 'left', background: theme === 'dark' ? 'var(--bg-base)' : 'transparent', border: 'none', borderRadius: '8px', color: theme === 'dark' ? 'var(--accent)' : 'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: '0.2s' }}
-                                            >🌙 Dark</button>
-                                            
-                                            <button 
-                                                onClick={() => handleThemeChange('magenta')}
-                                                style={{ width: '100%', padding: '0.5rem 0.75rem', textAlign: 'left', background: theme === 'magenta' ? 'var(--bg-base)' : 'transparent', border: 'none', borderRadius: '8px', color: theme === 'magenta' ? 'var(--accent)' : 'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, transition: '0.2s' }}
-                                            >🌺 Magenta</button>
-                                        </div>
-                                    )}
-                                </li>
-                            )}
-
-                            {!isChecking && (
-                                !user ? (
-                                    <li><Link href="/login" className="btn btn-primary btn-sm nav-btn" onClick={closeMenu}>Login</Link></li>
-                                ) : (
-                                    <>
-                                        {userIsAdmin && (
-                                            <li><Link href="/admin" className="nav-link" style={{ color: 'var(--accent)', fontWeight: 600 }} onClick={closeMenu}>Painel Admin</Link></li>
-                                        )}
-                                        
-                                        <li className="user-profile-mobile" style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
-                                            <div 
-                                                onClick={toggleProfileMenu}
-                                                style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(37, 99, 235, 0.1)', border: '2px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: 'var(--accent)', cursor: 'pointer', transition: 'transform 0.2s' }}
-                                                title="Meu Perfil"
-                                            >
-                                                {getInitial()}
-                                            </div>
-                                        </li>
-                                    </>
-                                )
-                            )}
+            <a className="nav-skip-link" href="#main-content">Pular para o conteúdo</a>
+            <header className="site-header" id="header" onKeyDown={handleHeaderKeys}>
+                <div className="site-header-inner">
+                    <Link href="/" className="site-wordmark" onClick={closeMenu} aria-label="CIA — página inicial"><span className="site-wordmark-logo">CIA<span>.</span></span><span className="site-wordmark-caption">GRUPO DE<br />PESQUISA</span></Link>
+                    <button ref={mobileButtonRef} type="button" className={`nav-mobile-toggle ${isMobileOpen ? 'is-open' : ''}`} onClick={() => setIsMobileOpen(!isMobileOpen)} aria-expanded={isMobileOpen} aria-controls="site-navigation" aria-label={isMobileOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}><span /><span /></button>
+                    <nav id="site-navigation" className={`nav-navigation ${isMobileOpen ? 'is-open' : ''}`} aria-label="Navegação principal">
+                        <ul className="nav-links">
+                            {links.map(({ href, label }) => <li key={href}><Link href={href} className="nav-page-link" aria-current={isActive(href) ? 'page' : undefined} onClick={closeMenu}>{label}</Link></li>)}
+                            {userIsAdmin && <li><Link href="/admin" className="nav-page-link nav-admin-link" aria-current={isActive('/admin') ? 'page' : undefined} onClick={closeMenu}>Painel Admin</Link></li>}
                         </ul>
+                        <div className="nav-actions">
+                            {mounted && <div className="nav-theme" ref={themeMenuRef} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setIsThemeMenuOpen(false); }}>
+                                <button ref={themeButtonRef} type="button" className="nav-theme-trigger" onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)} aria-label="Escolher tema de aparência" aria-expanded={isThemeMenuOpen} aria-haspopup="menu" aria-controls="nav-theme-options">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" /><path d="M12 4a8 8 0 0 1 0 16V4Z" fill="currentColor" /></svg><span>Tema</span><svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+                                </button>
+                                {isThemeMenuOpen && <div id="nav-theme-options" className="nav-theme-options" role="menu" aria-label="Tema de aparência" onKeyDown={handleThemeKeys}>
+                                    {themes.map(({ value, label }) => <button key={value} type="button" role="menuitemradio" aria-checked={theme === value} onClick={() => handleThemeChange(value)}><span className={`nav-theme-swatch nav-theme-swatch-${value}`} aria-hidden="true" />{label}{theme === value && <svg className="nav-theme-check" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m4 10 4 4 8-8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>}</button>)}
+                                </div>}
+                            </div>}
+                            {isChecking ? <span className="nav-auth-loading" aria-label="Verificando sessão" /> : !user ? <Link href="/login" className="nav-login" onClick={closeMenu}>Entrar <ArrowIcon /></Link> : <button ref={profileButtonRef} type="button" className="nav-profile-trigger" onClick={openProfile} aria-label="Abrir configurações do meu perfil" aria-haspopup="dialog">{initial}</button>}
+                        </div>
                     </nav>
                 </div>
             </header>
-
-            {/* MODAL DE PERFIL */}
-            {isProfileMenuOpen && (
-                <div style={{ 
-                    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
-                    background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', 
-                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '1rem'
-                }}>
-                    <div style={{ 
-                        background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '16px', 
-                        padding: '2rem', width: '100%', maxWidth: '420px', 
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.2)', position: 'relative' 
-                    }}>
-                        
-                        <h4 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>
-                            Configurações do Perfil
-                        </h4>
-                        
-                        <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>Primeiro Nome</label>
-                                <input type="text" value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.95rem', outline: 'none' }} />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>Último Nome</label>
-                                <input type="text" value={editLastName} onChange={(e) => setEditLastName(e.target.value)} style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.95rem', outline: 'none' }} />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>Link do Lattes (URL)</label>
-                                <input type="url" value={editLattes} onChange={(e) => setEditLattes(e.target.value)} placeholder="http://lattes.cnpq.br/..." style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.95rem', outline: 'none' }} />
-                            </div>
-                            
-                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                                <button type="button" onClick={() => setIsProfileMenuOpen(false)} className="btn btn-secondary" style={{ flex: 1, padding: '0.75rem' }}>
-                                    Cancelar
-                                </button>
-                                <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.75rem' }} disabled={isSavingProfile}>
-                                    {isSavingProfile ? 'Salvando...' : 'Atualizar Dados'}
-                                </button>
-                            </div>
-                        </form>
-
-                        <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-                            <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem', transition: '0.2s', padding: '0.5rem 1rem', borderRadius: '8px' }}>
-                                Sair da Conta
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {isProfileMenuOpen && <div className="nav-profile-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setIsProfileMenuOpen(false); }}>
+                <section ref={profileDialogRef} className="nav-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="nav-profile-title">
+                    <div className="nav-profile-heading"><div><p className="nav-profile-eyebrow">SUA CONTA CIA</p><h2 id="nav-profile-title">Configurações do Perfil</h2></div><button type="button" className="nav-profile-close" onClick={() => setIsProfileMenuOpen(false)} aria-label="Fechar configurações do perfil"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg></button></div>
+                    <form onSubmit={handleSaveProfile} className="nav-profile-form" aria-busy={isSavingProfile}>
+                        <div><label htmlFor="nav-first-name">Primeiro Nome</label><input id="nav-first-name" name="given-name" autoComplete="given-name" value={editFirstName} onChange={(event) => setEditFirstName(event.target.value)} /></div>
+                        <div><label htmlFor="nav-last-name">Último Nome</label><input id="nav-last-name" name="family-name" autoComplete="family-name" value={editLastName} onChange={(event) => setEditLastName(event.target.value)} /></div>
+                        <div><label htmlFor="nav-lattes">Link do Lattes (URL)</label><input id="nav-lattes" name="lattes" type="url" value={editLattes} onChange={(event) => setEditLattes(event.target.value)} placeholder="http://lattes.cnpq.br/..." /></div>
+                        {profileError && <p className="nav-profile-error" role="alert">{profileError}</p>}
+                        <div className="nav-profile-buttons"><button type="button" className="nav-profile-cancel" onClick={() => setIsProfileMenuOpen(false)}>Cancelar</button><button type="submit" className="nav-profile-save" disabled={isSavingProfile}>{isSavingProfile ? 'Salvando...' : 'Atualizar Dados'}</button></div>
+                    </form>
+                    <div className="nav-profile-logout"><button type="button" onClick={handleLogout}>Sair da Conta <ArrowIcon /></button></div>
+                </section>
+            </div>}
         </>
     );
 }
